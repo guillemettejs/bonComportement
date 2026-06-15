@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#7C3AED">
+<title>🌟 Bon Comportement</title>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<style>
+  :root {
+    --purple: #7C3AED;
+    --purple-light: #EDE9FE;
+    --purple-dark: #5B21B6;
+    --pink: #EC4899;
+    --pink-light: #FCE7F3;
+    --yellow: #F59E0B;
+    --yellow-light: #FEF3C7;
+    --green: #10B981;
+    --green-light: #D1FAE5;
+    --red: #EF4444;
+    --red-light: #FEE2E2;
+    --blue: #3B82F6;
+    --blue-light: #DBEAFE;
+    --gray: #6B7280;
+    --gray-light: #F3F4F6;
+    --gray-border: #E5E7EB;
+    --text: #111827;
+    --text-muted: #6B7280;
+    --bg: #F9FAFB;
+    --white: #FFFFFF;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+  /* ── Screens ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── Login ── */
+  #screen-login { background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); align-items: center; justify-content: center; padding: 2rem; }
+  .login-box { background: white; border-radius: 24px; padding: 2rem; width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); }
+  .login-logo { font-size: 48px; text-align: center; margin-bottom: .5rem; }
+  .login-title { font-size: 22px; font-weight: 700; text-align: center; color: var(--purple); margin-bottom: .25rem; }
+  .login-sub { font-size: 14px; text-align: center; color: var(--text-muted); margin-bottom: 1.5rem; }
+  .input-group { margin-bottom: 1rem; }
+  .input-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: .4rem; }
+  .input-group input { width: 100%; padding: .75rem 1rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 16px; outline: none; transition: border-color .2s; }
+  .input-group input:focus { border-color: var(--purple); }
+  .btn { width: 100%; padding: .85rem; border: none; border-radius: var(--radius-sm); font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity .2s, transform .1s; }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--purple); color: white; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-danger { background: var(--red); color: white; }
+  .login-error { color: var(--red); font-size: 13px; text-align: center; margin-top: .75rem; display: none; }
+
+  /* ── Top bar ── */
+  .topbar { background: white; padding: .75rem 1rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--gray-border); position: sticky; top: 0; z-index: 100; }
+  .topbar-title { font-size: 18px; font-weight: 700; color: var(--purple); display: flex; align-items: center; gap: .4rem; }
+  .topbar-actions { display: flex; gap: .5rem; }
+  .icon-btn { background: none; border: none; cursor: pointer; padding: .4rem; border-radius: 8px; font-size: 20px; color: var(--gray); transition: background .2s; }
+  .icon-btn:hover { background: var(--gray-light); }
+
+  /* ── Bottom nav ── */
+  .bottom-nav { background: white; border-top: 1px solid var(--gray-border); display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .6rem .25rem; border: none; background: none; cursor: pointer; color: var(--gray); font-size: 10px; font-weight: 600; transition: color .2s; }
+  .nav-btn.active { color: var(--purple); }
+  .nav-btn .nav-icon { font-size: 22px; }
+  .main-content { flex: 1; overflow-y: auto; padding: 1rem 1rem 5rem; }
+
+  /* ── Home / Kids ── */
+  .page { display: none; }
+  .page.active { display: block; }
+  .kids-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .kid-card { background: white; border-radius: var(--radius); padding: 1.25rem 1rem; box-shadow: var(--shadow); cursor: pointer; transition: transform .15s, box-shadow .15s; border: 3px solid transparent; position: relative; overflow: hidden; }
+  .kid-card:active { transform: scale(0.97); }
+  .kid-card.selected { border-color: var(--purple); }
+  .kid-avatar { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 36px; overflow: hidden; }
+  .kid-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .kid-name { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: .25rem; }
+  .kid-age { font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: .75rem; }
+  .kid-pts { text-align: center; font-size: 28px; font-weight: 800; color: var(--purple); }
+  .kid-pts-label { text-align: center; font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* ── Thermometer ── */
+  .thermo-wrap { margin: 1rem 0 .5rem; display: flex; align-items: center; gap: .75rem; }
+  .thermo-bar { flex: 1; height: 14px; background: var(--gray-border); border-radius: 20px; overflow: hidden; }
+  .thermo-fill { height: 100%; border-radius: 20px; transition: width .6s cubic-bezier(.4,0,.2,1); }
+  .thermo-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+  /* ── Day view ── */
+  .day-header { background: white; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+  .day-selector { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }
+  .day-nav { background: var(--gray-light); border: none; border-radius: 8px; padding: .4rem .75rem; cursor: pointer; font-size: 18px; }
+  .day-label { font-size: 15px; font-weight: 700; }
+  .points-display { display: flex; align-items: center; justify-content: center; gap: 1rem; padding: .5rem 0; }
+  .pts-big { font-size: 52px; font-weight: 800; color: var(--purple); line-height: 1; }
+  .pts-unit { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+  .quick-pts { display: flex; gap: .5rem; justify-content: center; margin-top: .5rem; }
+  .qpt-btn { flex: 1; padding: .6rem .25rem; border: 2px solid; border-radius: var(--radius-sm); font-size: 15px; font-weight: 800; cursor: pointer; transition: all .15s; background: white; }
+  .qpt-btn:active { transform: scale(0.94); }
+  .qpt-add { border-color: var(--green); color: var(--green); }
+  .qpt-add:hover { background: var(--green); color: white; }
+  .qpt-rem { border-color: var(--red); color: var(--red); }
+  .qpt-rem:hover { background: var(--red); color: white; }
+
+  /* ── Actions grid ── */
+  .section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin: 1.25rem 0 .6rem; }
+  .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .action-btn { background: white; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); padding: .7rem .6rem; cursor: pointer; transition: all .15s; text-align: center; }
+  .action-btn:active { transform: scale(0.96); }
+  .action-btn .a-icon { font-size: 24px; margin-bottom: .25rem; }
+  .action-btn .a-label { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .action-btn .a-pts { font-size: 13px; font-weight: 800; margin-top: .2rem; }
+  .action-btn.good { border-color: var(--green-light); background: var(--green-light); }
+  .action-btn.good .a-pts { color: var(--green); }
+  .action-btn.bad { border-color: var(--red-light); background: var(--red-light); }
+  .action-btn.bad .a-pts { color: var(--red); }
+
+  /* ── Calendar ── */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-header { font-size: 10px; font-weight: 700; text-align: center; color: var(--text-muted); padding: .3rem 0; text-transform: uppercase; }
+  .cal-day { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer; border: 2px solid transparent; position: relative; }
+  .cal-day.empty { background: none; cursor: default; }
+  .cal-day.today { border-color: var(--purple) !important; }
+  .cal-day.great { background: #D1FAE5; color: #065F46; }
+  .cal-day.good { background: #A7F3D0; color: #065F46; }
+  .cal-day.neutral { background: var(--gray-light); color: var(--text-muted); }
+  .cal-day.bad { background: #FEE2E2; color: #991B1B; }
+  .cal-day.terrible { background: #FECACA; color: #991B1B; }
+  .cal-day .cal-pts { font-size: 9px; font-weight: 800; }
+
+  /* ── Kid switcher in day view ── */
+  .kid-switcher { display: flex; gap: .5rem; margin-bottom: 1rem; }
+  .kid-switch-btn { flex: 1; padding: .5rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); background: white; cursor: pointer; font-size: 13px; font-weight: 700; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: .4rem; }
+  .kid-switch-btn.active { border-color: var(--purple); background: var(--purple-light); color: var(--purple); }
+
+  /* ── Rewards ── */
+  .rewards-grid { display: flex; flex-direction: column; gap: .6rem; }
+  .reward-card { background: white; border-radius: var(--radius-sm); padding: .9rem 1rem; display: flex; align-items: center; gap: .75rem; box-shadow: var(--shadow); border: 2px solid transparent; }
+  .reward-icon { font-size: 28px; flex-shrink: 0; }
+  .reward-info { flex: 1; }
+  .reward-name { font-size: 14px; font-weight: 700; }
+  .reward-cost { font-size: 12px; color: var(--text-muted); }
+  .reward-btn { padding: .4rem .75rem; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .reward-btn.can-afford { background: var(--purple); color: white; }
+  .reward-btn.cant-afford { background: var(--gray-light); color: var(--text-muted); cursor: not-allowed; }
+  .reward-section-title { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin: 1rem 0 .5rem; }
+
+  /* ── Settings ── */
+  .settings-section { background: white; border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; box-shadow: var(--shadow); }
+  .settings-section h3 { font-size: 14px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: .6rem 0; border-bottom: 1px solid var(--gray-border); }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 14px; font-weight: 600; }
+  .setting-sub { font-size: 12px; color: var(--text-muted); }
+  .kid-profile-row { display: flex; align-items: center; gap: .75rem; padding: .6rem 0; border-bottom: 1px solid var(--gray-border); }
+  .kid-profile-row:last-child { border-bottom: none; }
+  .kid-profile-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden; flex-shrink: 0; }
+  .kid-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .kid-profile-info { flex: 1; }
+  .kid-profile-name { font-size: 15px; font-weight: 700; }
+  .kid-profile-age { font-size: 12px; color: var(--text-muted); }
+  .small-btn { padding: .35rem .7rem; border-radius: 8px; border: 2px solid var(--gray-border); background: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .small-btn:hover { border-color: var(--purple); color: var(--purple); }
+
+  /* ── Modals ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: flex-end; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 24px 24px 0 0; padding: 1.5rem; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; animation: slideUp .25s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal-handle { width: 40px; height: 4px; background: var(--gray-border); border-radius: 2px; margin: 0 auto 1.25rem; }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 1.25rem; }
+  .modal-row { display: flex; gap: .75rem; align-items: center; margin-bottom: .75rem; }
+  .modal-input { flex: 1; padding: .7rem 1rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 15px; outline: none; }
+  .modal-input:focus { border-color: var(--purple); }
+  .emoji-picker { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+  .emoji-opt { font-size: 28px; padding: .4rem; border-radius: 8px; cursor: pointer; border: 2px solid transparent; background: var(--gray-light); transition: all .15s; }
+  .emoji-opt.selected { border-color: var(--purple); background: var(--purple-light); }
+  .modal-btns { display: flex; gap: .75rem; margin-top: 1rem; }
+  .modal-btns .btn { flex: 1; padding: .75rem; }
+  .btn-secondary { background: var(--gray-light); color: var(--text); }
+  .btn-success { background: var(--green); color: white; }
+
+  /* ── Toast ── */
+  .toast { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-120px); background: var(--text); color: white; padding: .75rem 1.25rem; border-radius: 20px; font-size: 14px; font-weight: 600; z-index: 500; transition: transform .3s; white-space: nowrap; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.error { background: var(--red); }
+  .toast.info { background: var(--purple); }
+
+  /* ── Loading ── */
+  #screen-loading { background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%); align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+  .loading-logo { font-size: 64px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+  .loading-text { color: white; font-size: 16px; font-weight: 600; }
+  .spinner { width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Config notice ── */
+  #config-notice { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; align-items: center; justify-content: center; padding: 1.5rem; }
+  #config-notice.show { display: flex; }
+  .config-box { background: white; border-radius: 20px; padding: 1.75rem; max-width: 400px; width: 100%; }
+  .config-box h2 { font-size: 18px; font-weight: 800; margin-bottom: .5rem; color: var(--purple); }
+  .config-box p { font-size: 13px; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.6; }
+  .config-box code { display: block; background: var(--gray-light); border-radius: 8px; padding: .75rem; font-size: 12px; margin-bottom: 1rem; word-break: break-all; color: var(--text); font-family: monospace; white-space: pre-wrap; }
+  .config-box input { width: 100%; padding: .7rem 1rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 13px; margin-bottom: .5rem; font-family: monospace; outline: none; }
+  .config-box input:focus { border-color: var(--purple); }
+
+  select { padding: .5rem .75rem; border: 2px solid var(--gray-border); border-radius: 8px; font-size: 14px; background: white; outline: none; cursor: pointer; }
+  select:focus { border-color: var(--purple); }
+
+  /* ── Photo upload ── */
+  .photo-upload { width: 72px; height: 72px; border-radius: 50%; border: 2px dashed var(--purple); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; overflow: hidden; background: var(--purple-light); flex-shrink: 0; }
+  .photo-upload img { width: 100%; height: 100%; object-fit: cover; }
+
+  .color-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+  .legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+  .legend-item { display: flex; align-items: center; gap: .3rem; font-size: 11px; color: var(--text-muted); }
+
+  .firebase-config-inputs textarea { width: 100%; height: 120px; padding: .75rem 1rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 11px; font-family: monospace; outline: none; resize: none; line-height: 1.6; }
+  .firebase-config-inputs textarea:focus { border-color: var(--purple); }
+</style>
+</head>
+<body>
+
+<!-- Config notice -->
+<div id="config-notice">
+  <div class="config-box">
+    <h2>⚙️ Configuration Firebase</h2>
+    <p>Pour que l'app fonctionne, tu dois configurer Firebase. Crée un projet sur <strong>console.firebase.google.com</strong>, active Authentication (email/mot de passe) et Firestore, puis copie ta config ici.</p>
+    <p style="font-size:12px; color: #7C3AED; font-weight: 600;">Colle ta config Firebase en un seul bloc :</p>
+    <div class="firebase-config-inputs">
+      <textarea id="cfg-paste" placeholder='apiKey: "AIzaSy...",&#10;authDomain: "monapp.firebaseapp.com",&#10;projectId: "monapp-abc12",&#10;appId: "1:123:web:abc"'></textarea>
+    </div>
+    <br>
+    <button class="btn btn-primary" onclick="saveConfig()">Enregistrer et démarrer</button>
+    <p style="font-size:11px; color: var(--text-muted); margin-top: .75rem;">Ces infos sont sauvegardées localement sur cet appareil.</p>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="screen active" id="screen-loading">
+  <div class="loading-logo">⭐</div>
+  <div class="loading-text">Bon Comportement</div>
+  <div class="spinner"></div>
+</div>
+
+<!-- Login -->
+<div class="screen" id="screen-login">
+  <div class="login-box">
+    <div class="login-logo">⭐</div>
+    <div class="login-title">Bon Comportement</div>
+    <div class="login-sub">Tableau des bons comportements</div>
+    <div class="input-group">
+      <label>Courriel</label>
+      <input type="email" id="login-email" placeholder="famille@email.com" autocomplete="email">
+    </div>
+    <div class="input-group">
+      <label>Mot de passe</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Connexion</button>
+    <div class="login-error" id="login-error">Courriel ou mot de passe incorrect.</div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="screen" id="screen-app">
+  <div class="topbar">
+    <div class="topbar-title">🌟 Bon Comportement</div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="openAddKid()" title="Ajouter un enfant">➕</button>
+      <button class="icon-btn" onclick="doLogout()" title="Déconnexion">🚪</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <!-- Page: Accueil -->
+    <div class="page active" id="page-home">
+      <div id="kids-container" class="kids-grid"></div>
+      <div id="home-empty" style="display:none; text-align:center; padding: 3rem 1rem; color: var(--text-muted);">
+        <div style="font-size:48px; margin-bottom:1rem;">👶</div>
+        <div style="font-size:16px; font-weight:700; margin-bottom:.5rem;">Aucun enfant ajouté</div>
+        <div style="font-size:14px;">Appuie sur ➕ pour ajouter ton premier enfant!</div>
+      </div>
+    </div>
+
+    <!-- Page: Journée -->
+    <div class="page" id="page-day">
+      <div class="kid-switcher" id="kid-switcher"></div>
+      <div class="day-header">
+        <div class="day-selector">
+          <button class="day-nav" onclick="changeDay(-1)">◀</button>
+          <div class="day-label" id="day-label">Aujourd'hui</div>
+          <button class="day-nav" onclick="changeDay(1)">▶</button>
+        </div>
+        <div class="points-display">
+          <div>
+            <div class="pts-big" id="day-pts">0</div>
+            <div class="pts-unit">points aujourd'hui</div>
+          </div>
+        </div>
+        <div class="quick-pts">
+          <button class="qpt-btn qpt-rem" onclick="adjustPoints(-1)">−1</button>
+          <button class="qpt-btn qpt-rem" onclick="adjustPoints(-3)">−3</button>
+          <button class="qpt-btn qpt-add" onclick="adjustPoints(1)">+1</button>
+          <button class="qpt-btn qpt-add" onclick="adjustPoints(3)">+3</button>
+          <button class="qpt-btn qpt-add" onclick="adjustPoints(5)">+5</button>
+        </div>
+      </div>
+
+      <div class="section-title">✅ Bonnes actions</div>
+      <div class="actions-grid" id="good-actions"></div>
+
+      <div class="section-title">⚠️ Retraits</div>
+      <div class="actions-grid" id="bad-actions"></div>
+    </div>
+
+    <!-- Page: Calendrier -->
+    <div class="page" id="page-cal">
+      <div class="kid-switcher" id="kid-switcher-cal"></div>
+      <div class="settings-section">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+          <button class="day-nav" onclick="changeCalMonth(-1)">◀</button>
+          <div style="font-size:16px; font-weight:700;" id="cal-month-label"></div>
+          <button class="day-nav" onclick="changeCalMonth(1)">▶</button>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><span class="color-dot" style="background:#10B981"></span>Excellent (15+)</div>
+          <div class="legend-item"><span class="color-dot" style="background:#A7F3D0"></span>Bien (8+)</div>
+          <div class="legend-item"><span class="color-dot" style="background:#E5E7EB"></span>Neutre (0)</div>
+          <div class="legend-item"><span class="color-dot" style="background:#FECACA"></span>Difficile (-)</div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+      </div>
+      <div class="settings-section" id="cal-week-summary">
+        <h3>Cette semaine</h3>
+        <div id="week-summary-content"></div>
+      </div>
+    </div>
+
+    <!-- Page: Récompenses -->
+    <div class="page" id="page-rewards">
+      <div class="kid-switcher" id="kid-switcher-rew"></div>
+      <div class="settings-section" style="margin-bottom:1rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem;">
+          <div>
+            <div style="font-size:13px; color:var(--text-muted);">Points disponibles</div>
+            <div style="font-size:36px; font-weight:800; color:var(--purple);" id="rew-pts">0</div>
+          </div>
+          <div style="font-size:40px;">🏆</div>
+        </div>
+        <div class="thermo-wrap">
+          <div style="font-size:11px; color:var(--text-muted);">0</div>
+          <div class="thermo-bar" style="flex:1">
+            <div class="thermo-fill" id="rew-thermo" style="width:0%; background: linear-gradient(90deg,#F59E0B,#10B981);"></div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted);">100</div>
+        </div>
+      </div>
+      <div id="rewards-list"></div>
+    </div>
+
+    <!-- Page: Réglages -->
+    <div class="page" id="page-settings">
+      <div class="settings-section">
+        <h3>👶 Enfants</h3>
+        <div id="settings-kids-list"></div>
+        <button class="btn btn-primary" style="margin-top:1rem; padding:.6rem 1rem; width:auto; font-size:14px;" onclick="openAddKid()">+ Ajouter un enfant</button>
+      </div>
+      <div class="settings-section">
+        <h3>🔄 Remise à zéro</h3>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Jour de reset</div>
+            <div class="setting-sub">Les points sont remis à zéro chaque semaine</div>
+          </div>
+          <select id="reset-day-select" onchange="saveResetDay()">
+            <option value="0">Dimanche</option>
+            <option value="1">Lundi</option>
+            <option value="5">Vendredi</option>
+            <option value="6">Samedi</option>
+          </select>
+        </div>
+        <div class="setting-row">
+          <div>
+            <div class="setting-label">Objectif hebdomadaire</div>
+            <div class="setting-sub">Points pour obtenir toutes les récompenses</div>
+          </div>
+          <select id="goal-select" onchange="saveGoal()">
+            <option value="75">75 pts</option>
+            <option value="100" selected>100 pts</option>
+            <option value="125">125 pts</option>
+            <option value="150">150 pts</option>
+          </select>
+        </div>
+        <button class="btn btn-danger" style="margin-top:1rem; padding:.6rem 1rem; width:auto; font-size:14px;" onclick="confirmReset()">🔄 Remettre à zéro maintenant</button>
+      </div>
+      <div class="settings-section">
+        <h3>🔥 Firebase</h3>
+        <div class="setting-row">
+          <div class="setting-label">Reconfigurer Firebase</div>
+          <button class="small-btn" onclick="showConfigNotice()">Modifier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" onclick="showPage('home',this)">
+      <span class="nav-icon">🏠</span><span>Accueil</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('day',this)">
+      <span class="nav-icon">📅</span><span>Journée</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('cal',this)">
+      <span class="nav-icon">🗓</span><span>Calendrier</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('rewards',this)">
+      <span class="nav-icon">🎁</span><span>Récompenses</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('settings',this)">
+      <span class="nav-icon">⚙️</span><span>Réglages</span>
+    </button>
+  </nav>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal: Add/Edit Kid -->
+<div class="modal-overlay" id="modal-kid">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-kid-title">Nouvel enfant</div>
+    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
+      <div class="photo-upload" id="photo-preview" onclick="document.getElementById('photo-input').click()">📷
+        <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">
+      </div>
+      <div style="flex:1">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:.4rem;">Ou choisis un émoji :</div>
+        <div class="emoji-picker" id="emoji-picker">
+          <span class="emoji-opt" onclick="selectEmoji(this,'👦')">👦</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'👧')">👧</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🧒')">🧒</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'👶')">👶</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🦊')">🦊</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🐱')">🐱</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🐶')">🐶</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🦋')">🦋</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🌟')">🌟</span>
+          <span class="emoji-opt" onclick="selectEmoji(this,'🚀')">🚀</span>
+        </div>
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Prénom</label>
+      <input class="modal-input" id="kid-name-input" placeholder="Ex: Emma" style="width:100%">
+    </div>
+    <div class="input-group">
+      <label>Âge</label>
+      <input class="modal-input" id="kid-age-input" type="number" placeholder="Ex: 7" min="1" max="17" style="width:100%">
+    </div>
+    <div class="input-group">
+      <label>Couleur du thème</label>
+      <div style="display:flex; gap:.5rem; flex-wrap:wrap;" id="color-picker">
+        <div class="emoji-opt selected" style="background:#EDE9FE; border-color:#7C3AED;" onclick="selectColor(this,'#7C3AED','#EDE9FE')">🟣</div>
+        <div class="emoji-opt" style="background:#FCE7F3;" onclick="selectColor(this,'#EC4899','#FCE7F3')">🩷</div>
+        <div class="emoji-opt" style="background:#DBEAFE;" onclick="selectColor(this,'#3B82F6','#DBEAFE')">💙</div>
+        <div class="emoji-opt" style="background:#D1FAE5;" onclick="selectColor(this,'#10B981','#D1FAE5')">💚</div>
+        <div class="emoji-opt" style="background:#FEF3C7;" onclick="selectColor(this,'#F59E0B','#FEF3C7')">💛</div>
+        <div class="emoji-opt" style="background:#FEE2E2;" onclick="selectColor(this,'#EF4444','#FEE2E2')">❤️</div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-secondary" onclick="closeModal('modal-kid')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveKid()">Enregistrer</button>
+    </div>
+    <div style="margin-top:.75rem; display:none;" id="delete-kid-btn">
+      <button class="btn btn-danger" onclick="deleteKid()">Supprimer cet enfant</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  FIREBASE CONFIG
+// ══════════════════════════════════════════
+const FIREBASE_PLACEHOLDER = {
+  apiKey: "VOTRE_API_KEY",
+  authDomain: "VOTRE_PROJECT.firebaseapp.com",
+  projectId: "VOTRE_PROJECT_ID",
+  appId: "VOTRE_APP_ID"
+};
+
+function getSavedConfig() {
+  try {
+    const c = localStorage.getItem('fb_config');
+    return c ? JSON.parse(c) : null;
+  } catch(e) { return null; }
+}
+
+function saveConfig() {
+  const raw = document.getElementById('cfg-paste').value;
+  function extract(key) {
+    const m = raw.match(new RegExp(key + '\\s*:\\s*["\']([^"\']+)["\']'));
+    return m ? m[1] : '';
+  }
+  const cfg = {
+    apiKey: extract('apiKey'),
+    authDomain: extract('authDomain'),
+    projectId: extract('projectId'),
+    appId: extract('appId')
+  };
+  if (!cfg.apiKey || !cfg.projectId) { alert('Config invalide. Assure-toi de coller les 4 lignes de ta config Firebase.'); return; }
+  localStorage.setItem('fb_config', JSON.stringify(cfg));
+  document.getElementById('config-notice').classList.remove('show');
+  location.reload();
+}
+
+function showConfigNotice() {
+  const saved = getSavedConfig();
+  if (saved) {
+    document.getElementById('cfg-paste').value =
+      `apiKey: "${saved.apiKey||''}",\nauthDomain: "${saved.authDomain||''}",\nprojectId: "${saved.projectId||''}",\nappId: "${saved.appId||''}"`;
+  }
+  document.getElementById('config-notice').classList.add('show');
+}
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+let db, auth, unsubKids = null;
+let currentKidId = null;
+let currentDay = todayKey();
+let calMonth = new Date();
+let calKidId = null;
+let rewKidId = null;
+let editingKidId = null;
+let selectedEmoji = '👦';
+let selectedColor = '#7C3AED';
+let selectedColorLight = '#EDE9FE';
+let photoDataUrl = null;
+let kids = {};
+let appSettings = { resetDay: 0, goal: 100 };
+
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+window.addEventListener('load', () => {
+  const cfg = getSavedConfig();
+  if (!cfg || !cfg.apiKey || cfg.apiKey === 'VOTRE_API_KEY') {
+    showScreen('screen-loading');
+    setTimeout(() => { showScreen('screen-loading'); showConfigNotice(); }, 800);
+    return;
+  }
+  try {
+    firebase.initializeApp(cfg);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    auth.onAuthStateChanged(user => {
+      if (user) { showScreen('screen-app'); initApp(); }
+      else { showScreen('screen-login'); }
+    });
+  } catch(e) {
+    console.error(e);
+    showConfigNotice();
+  }
+});
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ══════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-password').value;
+  document.getElementById('login-error').style.display = 'none';
+  auth.signInWithEmailAndPassword(email, pw)
+    .catch(() => { document.getElementById('login-error').style.display = 'block'; });
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('screen-login').classList.contains('active')) doLogin();
+});
+function doLogout() {
+  if (confirm('Se déconnecter?')) auth.signOut();
+}
+
+// ══════════════════════════════════════════
+//  APP INIT
+// ══════════════════════════════════════════
+function initApp() {
+  loadSettings();
+  if (unsubKids) unsubKids();
+  unsubKids = db.collection('kids').orderBy('createdAt').onSnapshot(snap => {
+    kids = {};
+    snap.forEach(doc => { kids[doc.id] = { id: doc.id, ...doc.data() }; });
+    renderHome();
+    updateSwitchers();
+    if (currentKidId && !kids[currentKidId]) currentKidId = Object.keys(kids)[0] || null;
+    if (!currentKidId) currentKidId = Object.keys(kids)[0] || null;
+    renderDayView();
+    renderCalendar();
+    renderRewards();
+    renderSettingsKids();
+  });
+}
+
+function loadSettings() {
+  db.collection('settings').doc('app').get().then(doc => {
+    if (doc.exists) {
+      appSettings = { ...appSettings, ...doc.data() };
+      document.getElementById('reset-day-select').value = appSettings.resetDay;
+      document.getElementById('goal-select').value = appSettings.goal;
+    }
+  });
+}
+
+function saveResetDay() {
+  appSettings.resetDay = parseInt(document.getElementById('reset-day-select').value);
+  db.collection('settings').doc('app').set(appSettings, {merge:true});
+  showToast('Jour de reset sauvegardé ✅', 'success');
+}
+function saveGoal() {
+  appSettings.goal = parseInt(document.getElementById('goal-select').value);
+  db.collection('settings').doc('app').set(appSettings, {merge:true});
+  showToast('Objectif sauvegardé ✅', 'success');
+}
+
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'day') renderDayView();
+  if (name === 'cal') renderCalendar();
+  if (name === 'rewards') renderRewards();
+  if (name === 'settings') renderSettingsKids();
+}
+
+// ══════════════════════════════════════════
+//  HOME
+// ══════════════════════════════════════════
+function renderHome() {
+  const cont = document.getElementById('kids-container');
+  const empty = document.getElementById('home-empty');
+  const kidList = Object.values(kids);
+  if (kidList.length === 0) { cont.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  cont.innerHTML = kidList.map(k => {
+    const weekPts = getWeekPoints(k);
+    const goal = appSettings.goal || 100;
+    const pct = Math.min(100, Math.round(weekPts / goal * 100));
+    const thermoColor = pct >= 80 ? '#10B981' : pct >= 50 ? '#F59E0B' : '#EF4444';
+    return `<div class="kid-card" onclick="selectKidHome('${k.id}')" style="border-color: ${currentKidId===k.id ? k.color || 'var(--purple)' : 'transparent'}">
+      <div class="kid-avatar" style="background:${k.colorLight||'#EDE9FE'}">
+        ${k.photo ? `<img src="${k.photo}" alt="${k.name}">` : (k.emoji||'👦')}
+      </div>
+      <div class="kid-name">${k.name}</div>
+      <div class="kid-age">${k.age} ans</div>
+      <div class="kid-pts">${weekPts}</div>
+      <div class="kid-pts-label">pts cette semaine</div>
+      <div class="thermo-wrap" style="margin-top:.5rem">
+        <div class="thermo-bar">
+          <div class="thermo-fill" style="width:${pct}%; background:${thermoColor};"></div>
+        </div>
+        <span class="thermo-label" style="font-size:10px">${pct}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function getWeekPoints(kid) {
+  if (!kid.days) return 0;
+  const total = Object.values(kid.days).reduce((s, v) => s + (v||0), 0);
+  return total;
+}
+
+function selectKidHome(id) {
+  currentKidId = id;
+  renderHome();
+  showPage('day', document.querySelectorAll('.nav-btn')[1]);
+}
+
+// ══════════════════════════════════════════
+//  KID SWITCHER
+// ══════════════════════════════════════════
+function updateSwitchers() {
+  ['kid-switcher','kid-switcher-cal','kid-switcher-rew'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isDay = id === 'kid-switcher';
+    const isCal = id === 'kid-switcher-cal';
+    const activeId = isDay ? currentKidId : (isCal ? (calKidId||currentKidId) : (rewKidId||currentKidId));
+    el.innerHTML = Object.values(kids).map(k => {
+      const active = k.id === activeId ? 'active' : '';
+      const onclick = isDay ? `switchDayKid('${k.id}')` : (isCal ? `switchCalKid('${k.id}')` : `switchRewKid('${k.id}')`);
+      return `<button class="kid-switch-btn ${active}" onclick="${onclick}" style="${active ? 'border-color:'+k.color+';background:'+k.colorLight+';color:'+k.color : ''}">
+        <span>${k.photo?'':''}${k.emoji||'👦'}</span> ${k.name}
+      </button>`;
+    }).join('');
+  });
+}
+
+function switchDayKid(id) { currentKidId = id; renderDayView(); updateSwitchers(); }
+function switchCalKid(id) { calKidId = id; renderCalendar(); updateSwitchers(); }
+function switchRewKid(id) { rewKidId = id; renderRewards(); updateSwitchers(); }
+
+// ══════════════════════════════════════════
+//  DAY VIEW
+// ══════════════════════════════════════════
+const GOOD_ACTIONS = [
+  { icon:'😊', label:'Bonne humeur', pts:5 },
+  { icon:'🏠', label:'Aide au ménage', pts:4 },
+  { icon:'🍽️', label:'Aide à la vaisselle', pts:3 },
+  { icon:'🧹', label:'Range sa chambre', pts:4 },
+  { icon:'🏫', label:'Bon comportement école', pts:5 },
+  { icon:'📚', label:'Lecture spontanée', pts:3 },
+  { icon:'❤️', label:'Gentillesse frère/sœur', pts:3 },
+  { icon:'🌙', label:'Routine du soir sans rappel', pts:4 },
+  { icon:'👕', label:'Habillage autonome', pts:2 },
+  { icon:'🌟', label:'Comportement exemplaire', pts:5 },
+];
+const BAD_ACTIONS = [
+  { icon:'😤', label:'Crise / mauvaise attitude', pts:-3 },
+  { icon:'🚫', label:"Refus d'obéir", pts:-3 },
+  { icon:'😡', label:'Comportement irrespectueux', pts:-4 },
+  { icon:'📱', label:"Trop d'écrans (non autorisé)", pts:-2 },
+  { icon:'💥', label:'Désordre intentionnel', pts:-2 },
+];
+
+function renderDayView() {
+  updateSwitchers();
+  const kid = kids[currentKidId];
+  const pts = kid && kid.days && kid.days[currentDay] !== undefined ? kid.days[currentDay] : 0;
+  document.getElementById('day-pts').textContent = pts;
+  const d = new Date(currentDay + 'T12:00:00');
+  const opts = { weekday:'long', day:'numeric', month:'long' };
+  const label = currentDay === todayKey() ? "Aujourd'hui" : d.toLocaleDateString('fr-CA', opts);
+  document.getElementById('day-label').textContent = label.charAt(0).toUpperCase() + label.slice(1);
+  document.getElementById('good-actions').innerHTML = GOOD_ACTIONS.map(a =>
+    `<div class="action-btn good" onclick="applyAction(${a.pts})">
+      <div class="a-icon">${a.icon}</div>
+      <div class="a-label">${a.label}</div>
+      <div class="a-pts">+${a.pts} pts</div>
+    </div>`).join('');
+  document.getElementById('bad-actions').innerHTML = BAD_ACTIONS.map(a =>
+    `<div class="action-btn bad" onclick="applyAction(${a.pts})">
+      <div class="a-icon">${a.icon}</div>
+      <div class="a-label">${a.label}</div>
+      <div class="a-pts">${a.pts} pts</div>
+    </div>`).join('');
+}
+
+function changeDay(dir) {
+  const d = new Date(currentDay + 'T12:00:00');
+  d.setDate(d.getDate() + dir);
+  currentDay = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  renderDayView();
+}
+
+function adjustPoints(n) {
+  if (!currentKidId) { showToast('Sélectionne un enfant dabord!', 'error'); return; }
+  const kid = kids[currentKidId];
+  const cur = (kid.days && kid.days[currentDay]) || 0;
+  const next = cur + n;
+  db.collection('kids').doc(currentKidId).update({ [`days.${currentDay}`]: next })
+    .then(() => { showToast((n>0?'+':'')+n+' point'+(Math.abs(n)>1?'s':'')+(n>0?' ⭐':''), n>0?'success':'error'); });
+}
+
+function applyAction(pts) {
+  if (!currentKidId) { showToast('Sélectionne un enfant dabord!', 'error'); return; }
+  const kid = kids[currentKidId];
+  const cur = (kid.days && kid.days[currentDay]) || 0;
+  const next = cur + pts;
+  db.collection('kids').doc(currentKidId).update({ [`days.${currentDay}`]: next })
+    .then(() => { showToast((pts>0?'+':'')+pts+' pts'+(pts>0?' ⭐':''), pts>0?'success':'error'); });
+}
+
+// ══════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════
+function renderCalendar() {
+  updateSwitchers();
+  const kid = kids[calKidId||currentKidId];
+  const year = calMonth.getFullYear();
+  const month = calMonth.getMonth();
+  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  document.getElementById('cal-month-label').textContent = monthNames[month]+' '+year;
+  const first = new Date(year, month, 1).getDay();
+  const days = new Date(year, month+1, 0).getDate();
+  const today = todayKey();
+  const DAY_LABELS = ['Di','Lu','Ma','Me','Je','Ve','Sa'];
+  let html = DAY_LABELS.map(d=>`<div class="cal-day-header">${d}</div>`).join('');
+  for(let i=0;i<first;i++) html += `<div class="cal-day empty"></div>`;
+  for(let d=1;d<=days;d++) {
+    const key = year+'-'+String(month+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const pts = (kid && kid.days && kid.days[key]) || 0;
+    let cls = 'neutral';
+    if (pts >= 15) cls = 'great';
+    else if (pts >= 8) cls = 'good';
+    else if (pts < 0) cls = 'terrible';
+    else if (pts > 0 && pts < 8) cls = 'good';
+    const isToday = key === today ? 'today' : '';
+    html += `<div class="cal-day ${cls} ${isToday}" onclick="goToDay('${key}')">
+      <span>${d}</span>
+      ${pts !== 0 ? `<span class="cal-pts">${pts>0?'+':''}${pts}</span>` : ''}
+    </div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+  renderWeekSummary(kid);
+}
+
+function renderWeekSummary(kid) {
+  const today = new Date();
+  const day = today.getDay();
+  const startOfWeek = new Date(today); startOfWeek.setDate(today.getDate()-day);
+  let total = 0; let dayCount = 0;
+  let rows = '';
+  const DAY_NAMES = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  for(let i=0;i<=day;i++) {
+    const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate()+i);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const pts = (kid && kid.days && kid.days[key]) || 0;
+    total += pts; dayCount++;
+    const color = pts >= 8 ? 'var(--green)' : pts < 0 ? 'var(--red)' : 'var(--text-muted)';
+    rows += `<div class="setting-row"><span class="setting-label">${DAY_NAMES[i]}</span><span style="font-weight:700;color:${color}">${pts>=0?'+':''}${pts} pts</span></div>`;
+  }
+  const goal = appSettings.goal || 100;
+  document.getElementById('week-summary-content').innerHTML =
+    `<div class="setting-row" style="margin-bottom:.5rem"><span style="font-size:15px;font-weight:700">Total semaine</span><span style="font-size:20px;font-weight:800;color:var(--purple)">${total} / ${goal} pts</span></div>${rows}`;
+}
+
+function changeCalMonth(dir) {
+  calMonth.setMonth(calMonth.getMonth()+dir);
+  renderCalendar();
+}
+
+function goToDay(key) {
+  currentDay = key;
+  showPage('day', document.querySelectorAll('.nav-btn')[1]);
+}
+
+// ══════════════════════════════════════════
+//  REWARDS
+// ══════════════════════════════════════════
+const REWARDS = [
+  { icon:'🍬', name:'Bonbon / friandise', cost:10 },
+  { icon:'🍰', name:'Dessert spécial', cost:15 },
+  { icon:'📱', name:"30 min d'écrans bonus", cost:15 },
+  { icon:'🎬', name:'Choisir le film du soir', cost:20 },
+  { icon:'🎮', name:'1h de jeux vidéo', cost:25 },
+  { icon:'📺', name:'Émission / épisode spécial', cost:25 },
+  { icon:'🍽️', name:'Choisir le repas du soir', cost:30 },
+  { icon:'🧸', name:'Petite surprise (jouet/livre)', cost:40 },
+  { icon:'🎡', name:'Activité spéciale (zoo, parc…)', cost:60 },
+  { icon:'🌙', name:'Soirée pyjama / ami invité', cost:70 },
+  { icon:'🍔', name:'Restaurant au choix', cost:80 },
+  { icon:'🎁', name:'Cadeau surprise', cost:100 },
+];
+
+function renderRewards() {
+  updateSwitchers();
+  const kid = kids[rewKidId||currentKidId];
+  const pts = kid ? getWeekPoints(kid) : 0;
+  const goal = appSettings.goal || 100;
+  document.getElementById('rew-pts').textContent = pts;
+  document.getElementById('rew-thermo').style.width = Math.min(100, pts/goal*100)+'%';
+  const small = REWARDS.filter(r=>r.cost<=20);
+  const med = REWARDS.filter(r=>r.cost>20&&r.cost<=50);
+  const big = REWARDS.filter(r=>r.cost>50);
+  function renderGroup(list, title) {
+    return `<div class="reward-section-title">${title}</div>
+    <div class="rewards-grid">${list.map(r=>{
+      const can = pts >= r.cost;
+      return `<div class="reward-card" style="opacity:${can?1:.6}">
+        <div class="reward-icon">${r.icon}</div>
+        <div class="reward-info">
+          <div class="reward-name">${r.name}</div>
+          <div class="reward-cost">${r.cost} points</div>
+        </div>
+        <button class="reward-btn ${can?'can-afford':'cant-afford'}" ${can?`onclick="spendReward(${r.cost},'${r.name}')"`:''}>
+          ${can?'Dépenser':'🔒'}
+        </button>
+      </div>`;
+    }).join('')}</div>`;
+  }
+  document.getElementById('rewards-list').innerHTML =
+    renderGroup(small,'🍬 Petites récompenses') +
+    renderGroup(med,'🎮 Récompenses moyennes') +
+    renderGroup(big,'🎡 Grandes récompenses');
+}
+
+function spendReward(cost, name) {
+  const kid = kids[rewKidId||currentKidId];
+  if (!kid) return;
+  if (!confirm(`Dépenser ${cost} points pour : ${name}?`)) return;
+  const today = todayKey();
+  const cur = (kid.days && kid.days[today]) || 0;
+  db.collection('kids').doc(kid.id).update({ [`days.${today}`]: cur - cost })
+    .then(() => showToast(`🎉 ${name} débloqué!`, 'success'));
+}
+
+// ══════════════════════════════════════════
+//  ADD / EDIT KID
+// ══════════════════════════════════════════
+function openAddKid(id) {
+  editingKidId = id || null;
+  photoDataUrl = null;
+  selectedEmoji = '👦';
+  selectedColor = '#7C3AED';
+  selectedColorLight = '#EDE9FE';
+  document.getElementById('modal-kid-title').textContent = id ? 'Modifier l\'enfant' : 'Nouvel enfant';
+  document.getElementById('delete-kid-btn').style.display = id ? 'block' : 'none';
+  const preview = document.getElementById('photo-preview');
+  preview.innerHTML = '📷<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">';
+  document.querySelectorAll('.emoji-opt').forEach(e => e.classList.remove('selected'));
+  document.querySelector('.emoji-opt').classList.add('selected');
+  document.querySelectorAll('#color-picker .emoji-opt').forEach((e,i) => { if(i===0) e.classList.add('selected'); else e.classList.remove('selected'); });
+  if (id && kids[id]) {
+    const k = kids[id];
+    document.getElementById('kid-name-input').value = k.name || '';
+    document.getElementById('kid-age-input').value = k.age || '';
+    if (k.photo) {
+      photoDataUrl = k.photo;
+      preview.innerHTML = `<img src="${k.photo}"><input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">`;
+    }
+    if (k.emoji) {
+      selectedEmoji = k.emoji;
+      document.querySelectorAll('#emoji-picker .emoji-opt').forEach(e => {
+        if (e.textContent.trim() === k.emoji) { e.classList.add('selected'); } else { e.classList.remove('selected'); }
+      });
+    }
+    if (k.color) {
+      selectedColor = k.color; selectedColorLight = k.colorLight||'#EDE9FE';
+    }
+  } else {
+    document.getElementById('kid-name-input').value = '';
+    document.getElementById('kid-age-input').value = '';
+  }
+  document.getElementById('modal-kid').classList.add('active');
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    photoDataUrl = ev.target.result;
+    const preview = document.getElementById('photo-preview');
+    preview.innerHTML = `<img src="${photoDataUrl}"><input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('#emoji-picker .emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedEmoji = emoji;
+  photoDataUrl = null;
+  document.getElementById('photo-preview').innerHTML = emoji+'<input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhoto(event)">';
+}
+
+function selectColor(el, color, colorLight) {
+  document.querySelectorAll('#color-picker .emoji-opt').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedColor = color;
+  selectedColorLight = colorLight;
+}
+
+function saveKid() {
+  const name = document.getElementById('kid-name-input').value.trim();
+  const age = parseInt(document.getElementById('kid-age-input').value);
+  if (!name) { showToast('Entre le prénom!', 'error'); return; }
+  const data = { name, age: age||0, emoji: selectedEmoji, color: selectedColor, colorLight: selectedColorLight, photo: photoDataUrl || null };
+  if (editingKidId) {
+    db.collection('kids').doc(editingKidId).update(data).then(() => { closeModal('modal-kid'); showToast('Profil mis à jour ✅', 'success'); });
+  } else {
+    db.collection('kids').add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp(), days:{} })
+      .then(ref => { currentKidId = ref.id; closeModal('modal-kid'); showToast('Enfant ajouté 🎉', 'success'); });
+  }
+}
+
+function deleteKid() {
+  if (!editingKidId) return;
+  if (!confirm('Supprimer cet enfant et tous ses points? Cette action est irréversible.')) return;
+  db.collection('kids').doc(editingKidId).delete().then(() => { closeModal('modal-kid'); showToast('Profil supprimé', 'info'); });
+}
+
+function renderSettingsKids() {
+  const cont = document.getElementById('settings-kids-list');
+  const kidList = Object.values(kids);
+  if (kidList.length === 0) { cont.innerHTML = '<div style="color:var(--text-muted);font-size:14px;padding:.5rem 0">Aucun enfant ajouté.</div>'; return; }
+  cont.innerHTML = kidList.map(k => `
+    <div class="kid-profile-row">
+      <div class="kid-profile-avatar" style="background:${k.colorLight||'#EDE9FE'}">
+        ${k.photo ? `<img src="${k.photo}" alt="${k.name}">` : (k.emoji||'👦')}
+      </div>
+      <div class="kid-profile-info">
+        <div class="kid-profile-name">${k.name}</div>
+        <div class="kid-profile-age">${k.age} ans</div>
+      </div>
+      <button class="small-btn" onclick="openAddKid('${k.id}')">Modifier</button>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  RESET
+// ══════════════════════════════════════════
+function confirmReset() {
+  if (!confirm('Remettre les points de TOUS les enfants à zéro? Cette action est irréversible.')) return;
+  const batch = db.batch();
+  Object.keys(kids).forEach(id => { batch.update(db.collection('kids').doc(id), { days: {} }); });
+  batch.commit().then(() => showToast('Points remis à zéro 🔄', 'info'));
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('active'); });
+});
+
+let toastTimer;
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
