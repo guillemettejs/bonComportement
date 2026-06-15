@@ -228,8 +228,8 @@
   .legend { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
   .legend-item { display: flex; align-items: center; gap: .3rem; font-size: 11px; color: var(--text-muted); }
 
-  .firebase-config-inputs { display: flex; flex-direction: column; gap: .4rem; }
-  .firebase-config-inputs input { font-size: 11px; }
+  .firebase-config-inputs textarea { width: 100%; height: 120px; padding: .75rem 1rem; border: 2px solid var(--gray-border); border-radius: var(--radius-sm); font-size: 11px; font-family: monospace; outline: none; resize: none; line-height: 1.6; }
+  .firebase-config-inputs textarea:focus { border-color: var(--purple); }
 </style>
 </head>
 <body>
@@ -239,12 +239,9 @@
   <div class="config-box">
     <h2>⚙️ Configuration Firebase</h2>
     <p>Pour que l'app fonctionne, tu dois configurer Firebase. Crée un projet sur <strong>console.firebase.google.com</strong>, active Authentication (email/mot de passe) et Firestore, puis copie ta config ici.</p>
-    <p style="font-size:12px; color: #7C3AED; font-weight: 600;">Colle chaque valeur de ta config Firebase :</p>
+    <p style="font-size:12px; color: #7C3AED; font-weight: 600;">Colle ta config Firebase en un seul bloc :</p>
     <div class="firebase-config-inputs">
-      <input id="cfg-apiKey" placeholder="apiKey" />
-      <input id="cfg-authDomain" placeholder="authDomain (ex: monapp.firebaseapp.com)" />
-      <input id="cfg-projectId" placeholder="projectId (ex: monapp-abc12)" />
-      <input id="cfg-appId" placeholder="appId (ex: 1:123:web:abc)" />
+      <textarea id="cfg-paste" placeholder='apiKey: "AIzaSy...",&#10;authDomain: "monapp.firebaseapp.com",&#10;projectId: "monapp-abc12",&#10;appId: "1:123:web:abc"'></textarea>
     </div>
     <br>
     <button class="btn btn-primary" onclick="saveConfig()">Enregistrer et démarrer</button>
@@ -515,13 +512,18 @@ function getSavedConfig() {
 }
 
 function saveConfig() {
+  const raw = document.getElementById('cfg-paste').value;
+  function extract(key) {
+    const m = raw.match(new RegExp(key + '\\s*:\\s*["\']([^"\']+)["\']'));
+    return m ? m[1] : '';
+  }
   const cfg = {
-    apiKey: document.getElementById('cfg-apiKey').value.trim(),
-    authDomain: document.getElementById('cfg-authDomain').value.trim(),
-    projectId: document.getElementById('cfg-projectId').value.trim(),
-    appId: document.getElementById('cfg-appId').value.trim()
+    apiKey: extract('apiKey'),
+    authDomain: extract('authDomain'),
+    projectId: extract('projectId'),
+    appId: extract('appId')
   };
-  if (!cfg.apiKey || !cfg.projectId) { alert('apiKey et projectId sont requis.'); return; }
+  if (!cfg.apiKey || !cfg.projectId) { alert('Config invalide. Assure-toi de coller les 4 lignes de ta config Firebase.'); return; }
   localStorage.setItem('fb_config', JSON.stringify(cfg));
   document.getElementById('config-notice').classList.remove('show');
   location.reload();
@@ -530,10 +532,8 @@ function saveConfig() {
 function showConfigNotice() {
   const saved = getSavedConfig();
   if (saved) {
-    document.getElementById('cfg-apiKey').value = saved.apiKey || '';
-    document.getElementById('cfg-authDomain').value = saved.authDomain || '';
-    document.getElementById('cfg-projectId').value = saved.projectId || '';
-    document.getElementById('cfg-appId').value = saved.appId || '';
+    document.getElementById('cfg-paste').value =
+      `apiKey: "${saved.apiKey||''}",\nauthDomain: "${saved.authDomain||''}",\nprojectId: "${saved.projectId||''}",\nappId: "${saved.appId||''}"`;
   }
   document.getElementById('config-notice').classList.add('show');
 }
